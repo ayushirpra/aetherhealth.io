@@ -57,4 +57,42 @@ export async function getCurrentUser() {
   return response.data
 }
 
+// ── Medical Records API Functions (Phase 3) ───────────────────────────────────
+
+export async function getRecords(params = {}) {
+  const response = await api.get('/records', { params })
+  return response.data
+}
+
+export async function getRecord(id) {
+  const response = await api.get(`/records/${id}`)
+  return response.data
+}
+
+export async function createRecord(recordData) {
+  const response = await api.post('/records', recordData)
+  return response.data
+}
+
+export async function updateRecord(id, updateData) {
+  const response = await api.put(`/records/${id}`, updateData)
+  return response.data
+}
+
+export async function deleteRecord(id) {
+  const response = await api.delete(`/records/${id}`)
+  return response.data
+}
+
+export async function authorizeDoctor(recordId, doctorId) {
+  const response = await api.post(`/records/${recordId}/authorize`, { doctorId })
+  return response.data
+}
+
+export async function revokeDoctor(recordId, doctorId) {
+  const response = await api.post(`/records/${recordId}/revoke`, { doctorId })
+  return response.data
+}
+
 export default api
+

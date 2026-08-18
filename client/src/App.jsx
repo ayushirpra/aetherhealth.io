@@ -5,6 +5,8 @@ import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
+import RecordsPage from './pages/RecordsPage.jsx'
+import RecordDetailPage from './pages/RecordDetailPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 
 /**
@@ -26,6 +28,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/records"
+            element={
+              <ProtectedRoute>
+                <RecordsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/records/:id"
+            element={
+              <ProtectedRoute>
+                <RecordDetailPage />
               </ProtectedRoute>
             }
           />

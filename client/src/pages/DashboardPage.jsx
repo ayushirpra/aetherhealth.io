@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
 import { Navbar } from '../components/Navbar.jsx'
 
@@ -57,20 +58,25 @@ export function DashboardPage() {
         {/* Role-Specific Overview Grid */}
         {isPatient && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center mb-4">
+            <Link
+              to="/records"
+              className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md hover:border-primary-200 transition-all group block"
+            >
+              <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">My Medical Records</h3>
+              <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary-600 transition-colors mb-1">
+                My Medical Records →
+              </h3>
               <p className="text-sm text-gray-500 mb-4">
-                Encrypted with AES before IPFS upload. Stored with tamper-evident integrity hashes.
+                View, upload, search, and manage permissions for all your clinical reports.
               </p>
               <div className="text-xs font-semibold text-primary-600 uppercase tracking-wider">
-                Phase 3 Feature
+                Phase 3 Live
               </div>
-            </div>
+            </Link>
 
             <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
               <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center mb-4">
@@ -106,20 +112,25 @@ export function DashboardPage() {
 
         {isDoctor && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center mb-4">
+            <Link
+              to="/records"
+              className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md hover:border-primary-200 transition-all group block"
+            >
+              <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">Authorized Patients</h3>
+              <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary-600 transition-colors mb-1">
+                Authorized Patients →
+              </h3>
               <p className="text-sm text-gray-500 mb-4">
-                View patients who have explicitly approved your access to their health records.
+                View records from patients who have explicitly granted you clinical review access.
               </p>
               <div className="text-xs font-semibold text-primary-600 uppercase tracking-wider">
-                Phase 6 Feature
+                Phase 3 Live
               </div>
-            </div>
+            </Link>
 
             <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
               <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center mb-4">

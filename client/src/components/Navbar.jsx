@@ -41,6 +41,12 @@ export function Navbar() {
                 >
                   Dashboard
                 </Link>
+                <Link
+                  to="/records"
+                  className="text-sm font-medium text-gray-700 hover:text-primary-600 transition-colors px-3 py-2 rounded-lg hover:bg-gray-50"
+                >
+                  Medical Records
+                </Link>
 
                 {/* User Pill with Role Badge */}
                 <div className="flex items-center space-x-2.5 pl-2 border-l border-gray-200">

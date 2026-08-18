@@ -6,8 +6,8 @@ _Last updated: 2026-08-19_
 
 ## Current Phase
 
-**Phase 2 — Authentication (Task 1: Backend Auth Foundation ✅ complete)**
-**Next: Phase 2 Task 2 — Frontend Auth UI & Integration**
+**Phase 3 — Medical Records (Task 1: Backend Foundation ✅ complete)**
+**Next: Phase 3 Task 2 — Frontend Records UI & Upload Management**
 
 ---
 
@@ -30,7 +30,24 @@ _Last updated: 2026-08-19_
   - Auth Validation Middleware (`server/src/middleware/authValidation.js`): express-validator chains returning 422 on field format/length/role failures.
   - Auth Middleware (`server/src/middleware/authMiddleware.js`): Bearer token extraction and verification, loads user and sets `req.user`, 401 on unauthorized requests.
   - Auth Routes (`server/src/routes/auth.js`): mounted at `/api/auth` in `app.js` (`POST /register`, `POST /login`, `GET /me`).
-  - Automated Tests (`server/tests/auth.test.js`): 14 Vitest + Supertest test cases with in-process `mongodb-memory-server` covering registration (success, doctor role, duplicate email 409, missing fields 422, invalid email 422, short password 422, invalid role 422), login (success 200, wrong password 401, non-existent email 401, missing email 422), and protected `/api/auth/me` route (valid token 200, missing token 401, malformed token 401). All 14 tests pass ✅.
+  - Automated Tests (`server/tests/auth.test.js`): 14 Vitest + Supertest test cases with in-process `mongodb-memory-server` covering all auth operations. All 14 tests pass ✅.
+- **Phase 2 (Task 2 — Frontend Auth UI & Integration)**:
+  - API Client & Interceptors (`client/src/services/api.js`): Axios client with Bearer token injection on requests and automatic 401 session clearing on responses; helper methods `loginUser`, `registerUser`, `getCurrentUser`.
+  - AuthContext & Provider (`client/src/context/AuthContext.jsx`): Centralized auth state, persistent JWT session in `localStorage`, automatic session validation via `/api/auth/me` on mount, `login`, `register`, `logout`, role flags (`isPatient`, `isDoctor`), and error handling.
+  - Custom Hook (`client/src/hooks/useAuth.js`): Accessible hook for consuming AuthContext throughout components.
+  - Protected Route Component (`client/src/components/ProtectedRoute.jsx`): Session verification spinner, unauthenticated redirect to `/login` with return location state, and optional `allowedRoles` enforcement.
+  - Login Page (`client/src/pages/LoginPage.jsx`): Healthcare-styled UI matching Design.md, email/password validation, show/hide password toggle, loading spinner, server error alerts, and auto-redirect.
+  - Register Page (`client/src/pages/RegisterPage.jsx`): Interactive Patient vs. Doctor role selector cards, name/email/password/confirm validation, server error alerts, and instant onboarding redirect.
+  - Navbar & Dashboard (`client/src/components/Navbar.jsx`, `client/src/pages/DashboardPage.jsx`): Role badge indicators (Patient: Teal, Doctor: Indigo), session info, sign-in/out controls, and role-specific dashboard overviews.
+  - Automated Tests (`client/src/test/`): 16 Vitest + React Testing Library tests covering AuthContext (6 tests), ProtectedRoute (4 tests), and AuthPages (6 tests). All 16 tests pass ✅.
+  - Client production build verified (`vite build`): 104 modules transformed, 0 errors ✅.
+- **Phase 3 (Task 1 — Medical Records Backend Foundation)**:
+  - `MedicalRecord` Mongoose Model (`server/src/models/MedicalRecord.js`): schema fields `patient` (ObjectId ref User), `title`, `recordType` (enum: `lab_report`, `prescription`, `radiology`, `discharge_summary`, `consultation_note`, `other`), `recordDate`, `description`, `doctorNotes`, `ipfsCid`, `fileHash`, `fileName`, `fileSize`, `mimeType`, `status`, `metadata`, `authorizedDoctors` (ObjectId ref User array), timestamps; `isUserAuthorized(userId, role)` helper supporting populated & unpopulated document references.
+  - Validation Middleware (`server/src/middleware/recordValidation.js`): express-validator chains for record creation, updates, and doctor authorization checks.
+  - Record Service (`server/src/services/recordService.js`): `createRecord` (patient owned), `listRecords` (patient owned / doctor authorized with query filters), `getRecordById` (strict authorization check), `updateRecord` (owner-only), `deleteRecord` (owner-only), `authorizeDoctor`, `revokeDoctor`.
+  - Record Controller (`server/src/controllers/recordController.js`): handlers for CRUD and doctor authorization with appropriate status codes (201, 200, 403, 404, 422).
+  - Record Routes (`server/src/routes/records.js`): mounted at `/api/records` in `app.js` with `authMiddleware` enforcement.
+  - Automated Tests (`server/tests/records.test.js`): 16 Vitest + Supertest test cases with in-process `mongodb-memory-server` verifying patient creation (201), validation rules (422), doctor creation restriction (403), patient listing, doctor authorized listing, ownership verification on GET/PUT/DELETE (403/404), and doctor authorization/revocation. All 16 tests pass ✅.
 
 ---
 
@@ -43,13 +60,14 @@ _Last updated: 2026-08-19_
 | Database | MongoDB Atlas for metadata, user profiles, structured AI results |
 | Medical files on-chain | **Never** — forbidden by design |
 | Auth | JWT + bcrypt; server-side authorization is authoritative |
+| Records Access | Patient owns record; Doctors require explicit inclusion in `authorizedDoctors` |
 | OCR pipeline | PDF/Image → preprocessing → Tesseract.js → Gemini API |
 | Encryption | Node.js crypto / AES before IPFS upload |
 | Permissions | Time-bound + revocable; enforced on backend |
 | Dev server proxy | Vite proxies `/api/*` → `localhost:5000` — no CORS issues in dev |
 | Express pattern | App factory (`createApp()`) exported separately from `server.js` for clean Supertest usage |
 | Node dev watcher | `node --watch` (built-in) used instead of nodemon — no extra dependency |
-| Auth testing | Vitest + `mongodb-memory-server` for fully isolated, offline test execution |
+| Testing isolation | Vitest + `mongodb-memory-server` on backend; Vitest + jsdom + RTL on frontend |
 
 ---
 
@@ -60,7 +78,7 @@ _Last updated: 2026-08-19_
 | Frontend | React + Vite | React 19, Vite 7 |
 | Styling | Tailwind CSS | 3.x |
 | Routing | React Router | 7.x |
-| HTTP client | Axios | 1.x |
+| HTTP client | Axios | 1.x (with JWT request/response interceptors) |
 | Backend | Node.js + Express | Node 26 LTS, Express 5 |
 | Database | MongoDB Atlas + Mongoose | Mongoose 8 |
 | Storage | IPFS + Pinata | Phase 4 |
@@ -70,7 +88,7 @@ _Last updated: 2026-08-19_
 | AI | Gemini API | Phase 5 |
 | Auth | JWT + bcrypt | Live (`jsonwebtoken`, `bcrypt`) |
 | Security | Helmet, rate-limit, express-validator | Live |
-| Testing | Vitest, Supertest, mongodb-memory-server | Live (14/14 tests passing) |
+| Testing | Vitest, RTL, Supertest, mongodb-memory-server | Live (46/46 tests passing) |
 | Deployment | Vercel (frontend) + Render (backend) | Phase 11 |
 
 ---
@@ -90,18 +108,17 @@ _Last updated: 2026-08-19_
 
 ## Current Task
 
-Phase 2 Task 1 (Authentication Foundation) complete with 14 passing automated tests. Memory.md updated.
+Phase 3 Task 1 (Medical Records Backend Foundation) complete with 46 passing automated tests across frontend and backend. Memory.md updated.
 
 ---
 
 ## Next Task
 
-**Phase 2 — Task 2: Frontend Auth UI & Integration**
-- AuthContext + useAuth hook in `client/`
-- Axios interceptor attaching JWT Authorization header
-- Register page & Login page (patient / doctor selection)
-- Protected route wrapper component
-- User profile page
+**Phase 3 — Task 2: Frontend Records UI & Upload Management**
+- Medical record list view with filter by type and status
+- Medical record creation modal/form
+- Medical record detail view (metadata, report preview placeholder, doctor authorization badge)
+- Doctor authorized records list view
 
 ---
 
@@ -118,8 +135,11 @@ Phase 2 Task 1 (Authentication Foundation) complete with 14 passing automated te
 | Milestone | Branch | Status |
 |---|---|---|
 | Phase 0 — Planning docs | `main` | ✅ Committed & pushed |
-| Phase 1 — Foundation scaffold | `main` | ⬜ Ready to commit |
-| Phase 2 Task 1 — Auth foundation | `main` | ✅ Complete (14/14 tests passing) |
-| Phase 2 Task 2 — Frontend auth & profiles | `main` | ⬜ Not started |
+| Phase 1 — Foundation scaffold | `main` | ✅ Committed & pushed |
+| Phase 2 — Authentication (Backend & Frontend) | `main` | ✅ Complete (30/30 tests passing) |
+| Phase 3 Task 1 — Medical Records backend | `main` | ✅ Complete (46/46 total tests passing) |
+| Phase 3 Task 2 — Frontend Records UI | `main` | ⬜ Not started |
 
 > **Rule reminder:** After each completed phase — test → review → update Memory.md → `git commit` → `git push`.
+
+

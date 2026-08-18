@@ -12,7 +12,14 @@ export function signToken(payload) {
   if (!SECRET) {
     throw new Error('JWT_SECRET is not set. Add it to your .env file.')
   }
-  return jwt.sign(payload, SECRET, { expiresIn: EXPIRES_IN })
+  const cleanPayload =
+    payload && typeof payload === 'object'
+      ? {
+          id: (payload.id || payload._id || '').toString(),
+          role: payload.role,
+        }
+      : payload
+  return jwt.sign(cleanPayload, SECRET, { expiresIn: EXPIRES_IN })
 }
 
 /**

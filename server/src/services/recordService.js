@@ -1,5 +1,7 @@
 import MedicalRecord from '../models/MedicalRecord.js'
 import User from '../models/User.js'
+import { computeHash, encryptBuffer, decryptBuffer } from '../utils/crypto.js'
+import { pinFileToIPFS, fetchFromIPFS } from './ipfsService.js'
 
 /**
  * createRecord — patient creates a new medical record.
@@ -11,6 +13,153 @@ export async function createRecord(patientId, recordData) {
   })
 
   return record
+}
+
+/**
+ * createRecordWithFile — creates a record and encrypts/pins an attached file to IPFS in one atomic operation.
+ */
+export async function createRecordWithFile(patientId, recordData, fileBuffer, fileMeta) {
+  if (!fileBuffer || !fileMeta) {
+    const error = new Error('File attachment is required.')
+    error.status = 400
+    throw error
+  }
+
+  // 1. Calculate plaintext SHA-256 integrity hash
+  const fileHash = computeHash(fileBuffer)
+
+  // 2. Encrypt buffer with AES-256-GCM
+  const { encryptedBuffer, iv, authTag } = encryptBuffer(fileBuffer)
+
+  // 3. Pin encrypted buffer to IPFS
+  const safeName = `enc_${Date.now()}_${fileMeta.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+  const { ipfsCid } = await pinFileToIPFS(encryptedBuffer, safeName, {
+    originalName: fileMeta.originalname,
+    mimeType: fileMeta.mimetype,
+  })
+
+  // 4. Create database record
+  const record = await MedicalRecord.create({
+    ...recordData,
+    patient: patientId,
+    ipfsCid,
+    fileHash,
+    iv,
+    authTag,
+    fileName: fileMeta.originalname,
+    fileSize: fileMeta.size || fileBuffer.length,
+    mimeType: fileMeta.mimetype,
+  })
+
+  return record
+}
+
+/**
+ * attachFileToRecord — encrypts and uploads a file attachment to an existing record.
+ */
+export async function attachFileToRecord(recordId, user, fileBuffer, fileMeta) {
+  const record = await MedicalRecord.findById(recordId)
+
+  if (!record) {
+    const error = new Error('Medical record not found.')
+    error.status = 404
+    throw error
+  }
+
+  if (record.patient.toString() !== user._id.toString()) {
+    const error = new Error('Access denied. Only the record owner can attach files.')
+    error.status = 403
+    throw error
+  }
+
+  const fileHash = computeHash(fileBuffer)
+  const { encryptedBuffer, iv, authTag } = encryptBuffer(fileBuffer)
+
+  const safeName = `enc_${Date.now()}_${fileMeta.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+  const { ipfsCid } = await pinFileToIPFS(encryptedBuffer, safeName, {
+    recordId: record._id.toString(),
+    originalName: fileMeta.originalname,
+  })
+
+  record.ipfsCid = ipfsCid
+  record.fileHash = fileHash
+  record.iv = iv
+  record.authTag = authTag
+  record.fileName = fileMeta.originalname
+  record.fileSize = fileMeta.size || fileBuffer.length
+  record.mimeType = fileMeta.mimetype
+
+  await record.save()
+  return record
+}
+
+/**
+ * downloadRecordFile — retrieves, decrypts, and validates the file from IPFS.
+ */
+export async function downloadRecordFile(recordId, user) {
+  const record = await MedicalRecord.findById(recordId)
+
+  if (!record) {
+    const error = new Error('Medical record not found.')
+    error.status = 404
+    throw error
+  }
+
+  const isAuthorized = record.isUserAuthorized(user._id, user.role)
+  if (!isAuthorized) {
+    const error = new Error('Access denied. You are not authorized to download this file.')
+    error.status = 403
+    throw error
+  }
+
+  if (!record.ipfsCid || !record.iv || !record.authTag) {
+    const error = new Error('No encrypted file attachment found on IPFS for this record.')
+    error.status = 404
+    throw error
+  }
+
+  // 1. Fetch ciphertext from IPFS gateway
+  const encryptedBuffer = await fetchFromIPFS(record.ipfsCid)
+
+  // 2. Decrypt ciphertext using stored IV and auth tag
+  let decryptedBuffer
+  try {
+    decryptedBuffer = decryptBuffer(encryptedBuffer, record.iv, record.authTag)
+  } catch (decErr) {
+    const error = new Error('Decryption failed. Authentication tag mismatch or corrupted ciphertext.')
+    error.status = 500
+    throw error
+  }
+
+  // 3. Verify SHA-256 integrity hash against stored value
+  const computedHash = computeHash(decryptedBuffer)
+  if (record.fileHash && computedHash !== record.fileHash) {
+    const error = new Error('Integrity verification failed. File hash mismatch (potential tampering detected).')
+    error.status = 409
+    throw error
+  }
+
+  return {
+    buffer: decryptedBuffer,
+    fileName: record.fileName || 'medical_record',
+    mimeType: record.mimeType || 'application/octet-stream',
+    fileSize: record.fileSize || decryptedBuffer.length,
+    fileHash: computedHash,
+    ipfsCid: record.ipfsCid,
+  }
+}
+
+/**
+ * verifyRecordIntegrity — checks if the IPFS stored file matches the recorded SHA-256 hash.
+ */
+export async function verifyRecordIntegrity(recordId, user) {
+  const fileData = await downloadRecordFile(recordId, user)
+  return {
+    verified: true,
+    fileHash: fileData.fileHash,
+    ipfsCid: fileData.ipfsCid,
+    fileName: fileData.fileName,
+  }
 }
 
 /**
@@ -185,3 +334,4 @@ export async function revokeDoctor(recordId, patientId, doctorId) {
 
   return record
 }
+

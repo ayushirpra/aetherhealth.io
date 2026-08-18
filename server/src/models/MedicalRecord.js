@@ -57,6 +57,16 @@ const medicalRecordSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    iv: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    authTag: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     fileName: {
       type: String,
       trim: true,

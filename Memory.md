@@ -6,8 +6,8 @@ _Last updated: 2026-08-19_
 
 ## Current Phase
 
-**Phase 3 — Medical Records** ✅ (complete)
-**Next: Phase 4 — Secure IPFS**
+**Phase 4 — Secure IPFS (Task 1: Foundation ✅ complete)**
+**Next: Phase 4 Task 2 — Frontend Secure Upload & Decrypted Download UI**
 
 ---
 
@@ -58,6 +58,14 @@ _Last updated: 2026-08-19_
   - Navigation & App Router (`client/src/components/Navbar.jsx`, `client/src/App.jsx`, `client/src/pages/DashboardPage.jsx`): Added `/records` and `/records/:id` protected routes, nav links, and dashboard overview card connections.
   - Automated Tests (`client/src/test/`): 25 passing client tests including 5 tests in `RecordsPage.test.jsx` and 4 tests in `RecordDetailPage.test.jsx`. All 25 tests pass ✅.
   - Client production build verified (`vite build`): 109 modules transformed, 0 errors ✅.
+- **Phase 4 (Task 1 — Secure IPFS Foundation & Encryption)**:
+  - Crypto Utility (`server/src/utils/crypto.js`): Node.js `crypto` with `aes-256-gcm` authenticated symmetric encryption/decryption using 16-byte random IVs and 16-byte authentication tags; SHA-256 hex digest computation for tamper-evident file integrity checks.
+  - Pinata IPFS Service (`server/src/services/ipfsService.js`): Integration with Pinata `pinFileToIPFS` API and public/dedicated IPFS gateways with custom metadata tagging (`encrypted: true`, `algorithm: aes-256-gcm`).
+  - File Upload Middleware (`server/src/middleware/fileUpload.js`): Multer in-memory storage (buffers never touch disk in plaintext), 15MB file size limit, and MIME type validation (PDF, JPEG, PNG, WEBP, TIFF, TXT).
+  - MedicalRecord Model Extension (`server/src/models/MedicalRecord.js`): Added `iv` and `authTag` fields to support authenticated AES-256-GCM decryption.
+  - Record Service & Controller Extensions (`server/src/services/recordService.js`, `server/src/controllers/recordController.js`): Added `createRecordWithFile`, `attachFileToRecord`, `downloadRecordFile` (with automatic SHA-256 integrity verification, 409 on hash mismatch), and `verifyRecordIntegrity`.
+  - Routes (`server/src/routes/records.js`): Mounted `POST /api/records/upload`, `POST /api/records/:id/attachment`, `GET /api/records/:id/download`, and `GET /api/records/:id/verify`.
+  - Automated Tests (`server/tests/ipfs.test.js`): 13 comprehensive Vitest tests verifying AES-256-GCM encryption/decryption, SHA-256 hashing, Pinata IPFS file pinning, owner download, doctor authorized download, unauthorized rejection (403), MIME validation (400), and ciphertext tampering detection (409). All 13 tests pass ✅.
 
 ---
 
@@ -71,8 +79,8 @@ _Last updated: 2026-08-19_
 | Medical files on-chain | **Never** — forbidden by design |
 | Auth | JWT + bcrypt; server-side authorization is authoritative |
 | Records Access | Patient owns record; Doctors require explicit inclusion in `authorizedDoctors` |
+| Encryption | AES-256-GCM in-memory before IPFS upload with SHA-256 integrity digest |
 | OCR pipeline | PDF/Image → preprocessing → Tesseract.js → Gemini API |
-| Encryption | Node.js crypto / AES before IPFS upload |
 | Permissions | Time-bound + revocable; enforced on backend |
 | Dev server proxy | Vite proxies `/api/*` → `localhost:5000` — no CORS issues in dev |
 | Express pattern | App factory (`createApp()`) exported separately from `server.js` for clean Supertest usage |
@@ -91,14 +99,14 @@ _Last updated: 2026-08-19_
 | HTTP client | Axios | 1.x (with JWT request/response interceptors) |
 | Backend | Node.js + Express | Node 26 LTS, Express 5 |
 | Database | MongoDB Atlas + Mongoose | Mongoose 8 |
-| Storage | IPFS + Pinata | Phase 4 |
+| Storage | IPFS + Pinata | Live (`aes-256-gcm` + Pinata REST API) |
 | Blockchain | Solidity, Polygon Amoy, Hardhat | Phase 7 |
 | Web3 | ethers.js, MetaMask | Phase 7 |
 | OCR | Tesseract.js | Phase 5 |
 | AI | Gemini API | Phase 5 |
 | Auth | JWT + bcrypt | Live (`jsonwebtoken`, `bcrypt`) |
-| Security | Helmet, rate-limit, express-validator | Live |
-| Testing | Vitest, RTL, Supertest, mongodb-memory-server | Live (55/55 tests passing) |
+| Security | Helmet, rate-limit, express-validator, AES-256-GCM | Live |
+| Testing | Vitest, RTL, Supertest, mongodb-memory-server | Live (68/68 tests passing) |
 | Deployment | Vercel (frontend) + Render (backend) | Phase 11 |
 
 ---
@@ -118,17 +126,17 @@ _Last updated: 2026-08-19_
 
 ## Current Task
 
-Phase 3 (Medical Records — Backend & Frontend) complete with 55 passing automated tests across the entire stack. Memory.md updated.
+Phase 4 Task 1 (Secure IPFS Foundation & Encryption) complete with 68 passing automated tests across frontend and backend. Memory.md updated.
 
 ---
 
 ## Next Task
 
-**Phase 4 — Secure IPFS**
-- Client-side / backend AES encryption before IPFS upload
-- IPFS upload/download via Pinata API
-- CID management & integrity hashing (SHA-256)
-- Secure decryption on authorized download
+**Phase 4 — Task 2: Frontend Secure Upload & Decrypted Download UI**
+- File drag-and-drop / file selector in record creation modal & detail page
+- Encrypted file attachment indicator with IPFS CID & SHA-256 hash chip
+- One-click secure download & decryption with verification status badge
+- Tamper-evident integrity verification button
 
 ---
 
@@ -148,9 +156,11 @@ Phase 3 (Medical Records — Backend & Frontend) complete with 55 passing automa
 | Phase 1 — Foundation scaffold | `main` | ✅ Committed & pushed |
 | Phase 2 — Authentication (Backend & Frontend) | `main` | ✅ Complete (30/30 tests passing) |
 | Phase 3 — Medical Records (Backend & Frontend) | `main` | ✅ Complete (55/55 total tests passing) |
-| Phase 4 — Secure IPFS | `main` | ⬜ Not started |
+| Phase 4 Task 1 — Secure IPFS Backend Foundation | `main` | ✅ Complete (68/68 total tests passing) |
+| Phase 4 Task 2 — Frontend IPFS Upload/Download | `main` | ⬜ Not started |
 
 > **Rule reminder:** After each completed phase — test → review → update Memory.md → `git commit` → `git push`.
+
 
 
 

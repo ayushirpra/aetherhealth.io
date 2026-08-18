@@ -6,8 +6,8 @@ _Last updated: 2026-08-19_
 
 ## Current Phase
 
-**Phase 1 — Foundation** ✅ (complete)
-**Next: Phase 2 — Authentication**
+**Phase 2 — Authentication (Task 1: Backend Auth Foundation ✅ complete)**
+**Next: Phase 2 Task 2 — Frontend Auth UI & Integration**
 
 ---
 
@@ -22,6 +22,15 @@ _Last updated: 2026-08-19_
   - Both `npm install` completed with 0 vulnerabilities
   - Vite production build verified: 43 modules, 2.40s ✅
   - Express app factory smoke-tested: starts cleanly ✅
+- **Phase 2 (Task 1 — Backend Auth Foundation)**:
+  - `User` Mongoose model (`server/src/models/User.js`): fields `name`, `email` (unique, lowercase, normalized), `passwordHash` (hidden via `select: false`), `role` (`patient` | `doctor`), timestamps, `comparePassword` method, `toSafeObject` sanitizer.
+  - JWT utility (`server/src/utils/jwt.js`): `signToken()` and `verifyToken()` reading `JWT_SECRET` and `JWT_EXPIRES_IN`.
+  - Auth Service (`server/src/services/authService.js`): `registerUser` with bcrypt (12 rounds) and duplicate email check; `loginUser` with timing/enumeration-safe credential check.
+  - Auth Controller (`server/src/controllers/authController.js`): `register`, `login`, and `getMe` handlers.
+  - Auth Validation Middleware (`server/src/middleware/authValidation.js`): express-validator chains returning 422 on field format/length/role failures.
+  - Auth Middleware (`server/src/middleware/authMiddleware.js`): Bearer token extraction and verification, loads user and sets `req.user`, 401 on unauthorized requests.
+  - Auth Routes (`server/src/routes/auth.js`): mounted at `/api/auth` in `app.js` (`POST /register`, `POST /login`, `GET /me`).
+  - Automated Tests (`server/tests/auth.test.js`): 14 Vitest + Supertest test cases with in-process `mongodb-memory-server` covering registration (success, doctor role, duplicate email 409, missing fields 422, invalid email 422, short password 422, invalid role 422), login (success 200, wrong password 401, non-existent email 401, missing email 422), and protected `/api/auth/me` route (valid token 200, missing token 401, malformed token 401). All 14 tests pass ✅.
 
 ---
 
@@ -40,6 +49,7 @@ _Last updated: 2026-08-19_
 | Dev server proxy | Vite proxies `/api/*` → `localhost:5000` — no CORS issues in dev |
 | Express pattern | App factory (`createApp()`) exported separately from `server.js` for clean Supertest usage |
 | Node dev watcher | `node --watch` (built-in) used instead of nodemon — no extra dependency |
+| Auth testing | Vitest + `mongodb-memory-server` for fully isolated, offline test execution |
 
 ---
 
@@ -58,9 +68,9 @@ _Last updated: 2026-08-19_
 | Web3 | ethers.js, MetaMask | Phase 7 |
 | OCR | Tesseract.js | Phase 5 |
 | AI | Gemini API | Phase 5 |
-| Auth | JWT + bcrypt | Phase 2 |
+| Auth | JWT + bcrypt | Live (`jsonwebtoken`, `bcrypt`) |
 | Security | Helmet, rate-limit, express-validator | Live |
-| Testing | Vitest, Supertest | Phase 10 |
+| Testing | Vitest, Supertest, mongodb-memory-server | Live (14/14 tests passing) |
 | Deployment | Vercel (frontend) + Render (backend) | Phase 11 |
 
 ---
@@ -80,19 +90,18 @@ _Last updated: 2026-08-19_
 
 ## Current Task
 
-Phase 1 complete. Memory.md updated.
+Phase 2 Task 1 (Authentication Foundation) complete with 14 passing automated tests. Memory.md updated.
 
 ---
 
 ## Next Task
 
-**Phase 2 — Authentication**
-- `User` Mongoose model (patient / doctor roles, bcrypt password)
-- `POST /api/auth/register` and `POST /api/auth/login` endpoints
-- JWT issuance and `authMiddleware.js` (protect routes)
-- Refresh token strategy (optional — decide at phase start)
-- Protected profile route `GET /api/auth/me`
-- Frontend: register, login pages; AuthContext + useAuth hook; axios interceptor attaches JWT header; protected route wrapper
+**Phase 2 — Task 2: Frontend Auth UI & Integration**
+- AuthContext + useAuth hook in `client/`
+- Axios interceptor attaching JWT Authorization header
+- Register page & Login page (patient / doctor selection)
+- Protected route wrapper component
+- User profile page
 
 ---
 
@@ -100,6 +109,7 @@ Phase 1 complete. Memory.md updated.
 
 - `server.js` requires `MONGODB_URI` in `.env` to start. Copy `server/.env.example` → `server/.env` and fill in your Atlas URI before running `npm run dev` in `server/`.
 - Vite Google Fonts preconnect in `index.html` requires network access at build/dev time; no offline impact.
+- MongoDB Atlas connection currently fails with SSL alert number 80 in local runtime; backend tests use `mongodb-memory-server` and are fully insulated.
 
 ---
 
@@ -109,6 +119,7 @@ Phase 1 complete. Memory.md updated.
 |---|---|---|
 | Phase 0 — Planning docs | `main` | ✅ Committed & pushed |
 | Phase 1 — Foundation scaffold | `main` | ⬜ Ready to commit |
-| Phase 2 — Authentication | `main` | ⬜ Not started |
+| Phase 2 Task 1 — Auth foundation | `main` | ✅ Complete (14/14 tests passing) |
+| Phase 2 Task 2 — Frontend auth & profiles | `main` | ⬜ Not started |
 
 > **Rule reminder:** After each completed phase — test → review → update Memory.md → `git commit` → `git push`.

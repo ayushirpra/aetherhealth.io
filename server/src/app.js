@@ -5,6 +5,7 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import { rateLimit } from 'express-rate-limit'
 import healthRouter from './routes/health.js'
+import authRouter from './routes/auth.js'
 
 /**
  * createApp — builds and returns the configured Express application.
@@ -50,9 +51,9 @@ export function createApp() {
 
   // ── Routes ─────────────────────────────────────────────────────────────────
   app.use('/api', healthRouter)
+  app.use('/api/auth', authRouter)          // Phase 2
 
   // More route modules will be mounted here in later phases:
-  // app.use('/api/auth',    authRouter)      // Phase 2
   // app.use('/api/records', recordsRouter)   // Phase 3
   // app.use('/api/access',  accessRouter)    // Phase 6
 

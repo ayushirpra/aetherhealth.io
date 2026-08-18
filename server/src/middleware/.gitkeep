@@ -1,0 +1,2 @@
+// Middleware — added Phase 2+
+// e.g. authMiddleware.js, errorHandler.js, validate.js
